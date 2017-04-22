@@ -1,0 +1,18 @@
+model,type,units,manufacturer,range,max_fuel_capacity
+A319,jet,metric,Airbus,6950,26750
+A320,jet,metric,Airbus,6850,26750
+A321,jet,metric,Airbus,6850,29580
+A330-900,jet,metric,Airbus,12130,139090
+737-600,jet,metric,Boeing,5840,26025
+747-200,jet,metric,Boeing,7315,43625
+747-400,jet,metric,Boeing,13480,216820
+757-200,jet,metric,Boeing,7315,43625
+767-400,jet,metric,Boeing,10415,91370
+777,jet,metric,Boeing,10805,171155
+BAE146,turboprop,metric,BAE,3000,11728
+DC8,jet,metric,Douglas,4165,70880
+F50,turboprop,metric,Fokker,2632,5140
+MD11,jet,metric,McDonallDouglas,7354,146174
+A400M,turboprop,metric,Airbus,3298,50500
+C212,turboprop,metric,Airbus,1811,2000
+V22,turboprop,metric,Boeing ,3889,6282
