@@ -1,14 +1,14 @@
 import math
 from airport import Airport
-from class_dictionary import ClassDictionary
+from parent_class_dictionary import ParentClassDictionary
 from custom_exceptions import *
 
 
-class AirportAtlas(ClassDictionary):
+class AirportAtlas(ParentClassDictionary):
 
     def __init__(self, csv_file):
         self.data_dict = {}
-        ClassDictionary.__init__(self, csv_file)
+        ParentClassDictionary.__init__(self, csv_file)
 
     def load_data(self, csv_file):
         """The method has the same function of AircraftsDictionary.load_data. For reusability it would be appropriate making
@@ -66,6 +66,19 @@ class AirportAtlas(ClassDictionary):
             output_dict[distance] = airp
         max_distance = max(output_dict.keys())
         return output_dict[max_distance]
+
+    def get_airport_at_min_distance(self, home_airport, list_of_airport):
+        """Given a list of airports and a selected airport, it will find the aiport in this list that it's at
+        minimum distance from the selected airport"""
+        output_dict = {}
+        for airp in list_of_airport:
+            if home_airport != airp:
+                distance = self.get_distance_between_airports(home_airport, airp)
+                output_dict[distance] = airp
+        max_distance = min(output_dict.keys())
+        return output_dict[max_distance]
+
+
 
     def get_list_of_airports_from_country(self, country): #Need for GUI. Retrieves a list of all airport in a selected country
         list_codes = []

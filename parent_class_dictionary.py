@@ -2,7 +2,7 @@ import csv
 from custom_exceptions import *
 
 
-class ClassDictionary:
+class ParentClassDictionary:
 
     def __init__(self,csv_file):
         self.data_dict = {}
@@ -15,7 +15,7 @@ class ClassDictionary:
         if key in self.data_dict.keys():
             return self.data_dict[key]
         else:
-            raise InvalidCodeError((key, ' is not a valid code!'))
+            raise InvalidCodeError('{0} is not a valid code!'.format(key))
 
     def open_csv_file(self, csv_file):
         '''Open csv file and return a tuple with open file and a dictionary containing all ther rows in the file.

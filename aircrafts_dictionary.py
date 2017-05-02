@@ -1,13 +1,13 @@
 from aircraft import Aircraft
-from class_dictionary import ClassDictionary
+from parent_class_dictionary import ParentClassDictionary
 from custom_exceptions import *
 
 
-class AircraftDictionary(ClassDictionary):
+class AircraftDictionaryParent(ParentClassDictionary):
 
     def __init__(self, csv_file):
         self.data_dict = {}
-        ClassDictionary.__init__(self, csv_file)
+        ParentClassDictionary.__init__(self, csv_file)
 
     def load_data(self, csv_file):
         """Gets a tuple of open csv file and records of all data in it an then populated aircrafts dictionary.

@@ -1,20 +1,21 @@
 from tkinter import *
-# from airport_atlas import AirportAtlas
-# from aircrafts_dictionary import AircraftDictionary
+from tkinter import filedialog
+from aircrafts_dictionary import AircraftDictionaryParent
 from custom_exceptions import *
 from tkinter.ttk import Combobox
 from tkinter import messagebox
-from best_routes import *
+from route_algorithms import *
+import csv
 
 
 class MyFrame(Frame):
     def __init__(self):
         Frame.__init__(self)
-        self.master.title('Find best route')
+        self.master.title('Fuel Management Software - Find cheapest route')
         self.master.geometry("%dx%d" %(self.winfo_screenwidth(), self.winfo_screenheight()))
         self.bg_color = '#DCDCDC'
         self.master.config(bg=self.bg_color)
-        self.config(bg=self.bg_color)#DCDCDC#E6E6FA#87CEFA#4682B4
+        self.config(bg=self.bg_color)
         self.grid()
         self.my_font = 'helvetica 12 bold'
 
@@ -31,7 +32,7 @@ class MyFrame(Frame):
 
     def select_aircraft(self):
         """Combobox for selecting aircraft model and its associated label"""
-        self.aircrafts_dictionary = AircraftDictionary('aircraft.csv')
+        self.aircrafts_dictionary = AircraftDictionaryParent('aircraft.csv')
         Label(self, text="Choose Aircraft", bg=self.bg_color).grid(row=0, pady=20)
 
         # get list of all aircraft models from aircraft.csv file
@@ -53,6 +54,7 @@ class MyFrame(Frame):
         Label(self, text="Choose Airport's Country", bg=self.bg_color).grid(row=0, column=1, pady=20, sticky='n')
 
         self.list_countries = self.airport_atlas.get_list_countries() #get list of all countries from airport.csv file
+        self.list_countries.append('All Airports')
         self.list_countries.sort()
 
         self.country_var = StringVar(self)
@@ -85,7 +87,7 @@ class MyFrame(Frame):
 
         Label(self, text="Aircraft Model", bg=self.bg_color).grid(row=0, column=3, pady=20)
         self.aircraft_model = StringVar()
-        self.aircraft_text_box = Label(self, textvariable=self.aircraft_model, font=self.my_font, height=1, width=7,
+        self.aircraft_text_box = Label(self, textvariable=self.aircraft_model, font=self.my_font, height= 1, width=7,
                                        relief=SUNKEN, bg='white')
         self.aircraft_text_box.grid(row=2, column=3,padx=40)
 
@@ -117,33 +119,37 @@ class MyFrame(Frame):
 
 
     def create_buttons(self):
-        self.find_best_route_btn = Button(self, text='Find Best Route', font=self.my_font, bg='lightyellow',state='disabled',
+        self.find_best_route_btn = Button(self, text='Find Best Route', font=self.my_font, bg='#FFD700',state='disabled',
                                           command=self.display_best_route)
-        self.find_best_route_btn.grid(row=3, column=5, columnspan=2, pady=40)
+        self.find_best_route_btn.grid(row=3, column=6, pady=40)
         self.find_best_route_btn.bind('<Return>', self.display_best_route)
 
-        self.reset_btn = Button(self, text='Reset Airports', font=self.my_font, bg='lightblue', command=self.reset_route)
+        self.reset_btn = Button(self, text='Reset Airports', font=self.my_font, bg='#87CEFA', command=self.reset_route)
         self.reset_btn.grid(row=3, column=7, columnspan=2)
         self.reset_btn.bind('<Return>', self.reset_route)
+
+        self.save_btn = Button(self, text='Save Route', font=self.my_font, bg='#87CEFA',
+                                command=self.save_csv_file)
+        self.save_btn.grid(row=3, column=9)
 
     #--------------------------------------------BOTTOM SECTION---------------------------------------------------
 
     # Bottom section of window. Display results of previous selection
     def visualize_best_route(self):
         # Create a new Frame for better visualization(without it the bottom section would have been affected from the top one)
-        self.btm = Frame()
-        self.btm.grid(row=6,sticky='w', padx=20)
-        self.btm.config(bg=self.bg_color)
+        self.bottom = Frame()
+        self.bottom.grid(row=6, sticky='w', padx=20)
+        self.bottom.config(bg=self.bg_color)
         self.width_label = 40
-        Label(self.btm, text='Departure', bg=self.bg_color).grid(row=0, column=1)
-        Label(self.btm, text='Arrival', bg=self.bg_color).grid(row=0, column=3)
-        Label(self.btm, text='Km', bg=self.bg_color).grid(row=0, column=4)
-        Label(self.btm, text='€', bg=self.bg_color).grid(row=0, column=5)
-        Label(self.btm, text='L', bg=self.bg_color).grid(row=0, column=6)
+        Label(self.bottom, text='Departure', bg=self.bg_color).grid(row=0, column=1)
+        Label(self.bottom, text='Arrival', bg=self.bg_color).grid(row=0, column=3)
+        Label(self.bottom, text='Km', bg=self.bg_color).grid(row=0, column=4)
+        Label(self.bottom, text='€', bg=self.bg_color).grid(row=0, column=5)
+        Label(self.bottom, text='L', bg=self.bg_color).grid(row=0, column=6)
 
         #Create Label for trips number
         for i in range(1,7):
-            self.trip_lbl = Label(self.btm, text=i, bg=self.bg_color)
+            self.trip_lbl = Label(self.bottom, text=i, bg=self.bg_color)
             self.trip_lbl.grid(row=i,column=0)
 
         self.list_text_boxes = []
@@ -238,7 +244,7 @@ class MyFrame(Frame):
                                      self.cost_trip6_var, self.fuel_trip6_var))
 
         # Text boxes for total amount of Km, cost, liter
-        Label(self.btm, text='-' * 80,bg=self.bg_color).grid(row=7, column=4, columnspan=3)
+        Label(self.bottom, text='-' * 80, bg=self.bg_color).grid(row=7, column=4, columnspan=3)
         self.total_km_var = StringVar()
         self.create_labels_for_trips(self.total_km_var, 8, 4)
         self.total_euro_var = StringVar()
@@ -253,7 +259,10 @@ class MyFrame(Frame):
     def update_airports_based_on_country(self, event):
         """Event which changes the list of airport codes in Choose Airport based on the selected country in
         Choose Airport's country combobox"""
-        self.list_choosen_airports = self.airport_atlas.get_list_of_airports_from_country(self.country_cmbox.get())
+        if self.country_cmbox.get() == 'All Airports':
+            self.list_choosen_airports = [*self.airport_atlas.data_dict.keys()]
+        else:
+            self.list_choosen_airports = self.airport_atlas.get_list_of_airports_from_country(self.country_cmbox.get())
         self.list_choosen_airports.sort()
         self.airport_var.set(self.list_choosen_airports[0])
         self.airport_cmbox['values'] = [*self.list_choosen_airports]
@@ -320,34 +329,53 @@ class MyFrame(Frame):
                                                   self.list_choosen_airports[1:],
                                                   self.aircrafts_dictionary, self.airport_atlas)
         except RouteNotFoundError as exc:
-            messagebox.showinfo('Best Route', exc.__str__())
-        except FileFormatError as ex:
-            messagebox.showerror('Best Route', ex.__str__())
+            messagebox.showinfo('Fuel Management Software', exc)
         except InvalidCodeError as ex:
-            messagebox.showerror('Best Route', ex.__str__())
-        except FileNotExistError as ex:
-            messagebox.showerror('Best Route', ex.__str__())
+            messagebox.showerror('Fuel Management Software', ex)
+
         else:
             for trip, route in self.best_route.items():
                 for elem in range(len(route)):
-                    self.list_text_boxes[trip - 1][elem].set(route[elem])
-            for i in range(len(self.list_total)):
-                self.list_total[i].set(get_sum_of_dict_values(self.best_route, i + 2))
+                    if elem == 0 or elem == 1:
+                        self.list_text_boxes[trip - 1][elem].set(route[elem])
+                    else:
+                        self.list_text_boxes[trip - 1][elem].set("{:0,.2f}".format(route[elem]))
 
+            for i in range(len(self.list_total)):
+                self.list_total[i].set("{:0,.2f}".format(get_sum_of_dict_values(self.best_route, i + 2)))
 
     # Two supporting methods to create labels(textboxes)
     def create_labels_for_trips(self, var, row, col, width=10, height=1, anchor='center'):
-        """Metdhos to gather together all text boxes"""
-        trip_lbl = Label(self.btm, textvariable=var,  height=height, width=width,
-                                 relief=SUNKEN, bg='white', font=self.my_font, anchor=anchor)
+        """Methods to gather together all text boxes"""
+        trip_lbl = Label(self.bottom, textvariable=var, height=height, width=width,
+                         relief=SUNKEN, bg='white', font=self.my_font, anchor=anchor)
         trip_lbl.grid(row=row, column=col, pady=20, padx=15, sticky='w')
 
         return trip_lbl
 
     def create_arrow_label(self, row):
-        from_to = Label(self.btm, text='--->', bg=self.bg_color)
+        from_to = Label(self.bottom, text='--->', bg=self.bg_color)
         from_to.grid(row=row, column=2)
         return from_to
+
+    def save_csv_file(self):
+        """Save the best route found on CSV file"""
+        filename = filedialog.asksaveasfilename(confirmoverwrite=True,initialdir="/", title="Save Cheapest Route", filetypes= (("CSV file","*.csv"),("All files","*.*")),defaultextension='.csv')
+        if filename:
+            with open(filename, "w") as csvFile:
+                fieldnames = ['Aircraft Model','Departure', 'Arrival', 'Distance(Km)', 'Cost(Euro)', 'Fuel(L)']
+                writer = csv.DictWriter(csvFile, fieldnames=fieldnames)
+                writer.writeheader()
+                for elem in range(len(self.list_text_boxes)):
+                    writer.writerow({fieldnames[0]: self.aircraft_var.get(),
+                                     fieldnames[1]: self.list_text_boxes[elem][0].get(),
+                                     fieldnames[2]: self.list_text_boxes[elem][1].get(),
+                                     fieldnames[3]: self.list_text_boxes[elem][2].get(),
+                                     fieldnames[4]: self.list_text_boxes[elem][3].get(),
+                                     fieldnames[5]: self.list_text_boxes[elem][4].get()})
+                writer.writerow({fieldnames[3]: self.list_total[0].get(),
+                                 fieldnames[4]: self.list_total[1].get(),
+                                 fieldnames[5]: self.list_total[2].get()})
 
 
 
@@ -355,5 +383,11 @@ def main():
     MyFrame().mainloop()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except FileFormatError as ex:
+        messagebox.showerror('Fuel Management Software', ex)
+    except FileNotExistError as ex:
+        messagebox.showerror('Fuel Management Software', ex)
+
 

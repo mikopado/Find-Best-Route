@@ -1,12 +1,12 @@
 from currency import Currency
-from class_dictionary import ClassDictionary
+from parent_class_dictionary import ParentClassDictionary
 from custom_exceptions import *
 
-class CountryCurrenciesDictionary(ClassDictionary):
+class CountryCurrenciesDictionaryParent(ParentClassDictionary):
 
     def __init__(self, csv_file):
         self.data_dict = {}
-        ClassDictionary.__init__(self, csv_file)
+        ParentClassDictionary.__init__(self, csv_file)
 
     def load_data(self, csv_file):
         try:
