@@ -9,6 +9,7 @@ class Routes:
         self._currency_rates = currency_rates
         self._currencies = currencies
 
+    # ----------------------SUPPORTING METHODS----------------------------#
     def count_visited_airports(self, aDict, anAirportCode):
         """Counts how many times an airport code appears as a departure airport in route dictionary"""
         count = 0
@@ -32,6 +33,110 @@ class Routes:
         for j in route.values():
             sum += j[index]
         return round(sum, 2)
+
+    def get_airport_at_min_distance_within_range(self, takeoff_code, destination, aircraft, airports):
+        """Gets the airport at minimum distance from takeoof code airport considering the aircraft range"""
+        min_distance = sys.maxsize
+        for target_code in airports:
+            target_airp_distance = self._airports.get_distance_between_airports(takeoff_code, target_code)
+            if target_code != takeoff_code and target_airp_distance <= aircraft.get_range() and target_airp_distance < min_distance:
+                destination = target_code
+                min_distance = target_airp_distance
+        return destination
+
+    def find_stopover_between_airports(self, list_stopover, takeoff_airport, airport_max, aircraft,
+                                       takeoff_rate, destination, distance, best_price, best_route):
+        #Try to find an airport between the departure airport and airport which is the farthest one from it.
+        for airp in list_stopover:
+            """For each airport still in the stop over list, it checks if there is any airport between
+               the departure and its farthest airport. If this airport is at the distance to each of them less
+               than aircraft range and it's the most convenient then the program chooses this airport and get two trips.
+                First trip - departure to selected airport and second trip - selected airport to farthest airport
+            """
+            if airp != takeoff_airport and airp != airport_max:
+
+                distance_takeoff_airp = self._airports.get_distance_between_airports(takeoff_airport, airp)
+                distance_airp_airpmax = self._airports.get_distance_between_airports(airp, airport_max)
+                airp_rate = self._currency_rates.get_rate_from_country(airp, self._airports, self._currencies)
+
+                if distance_airp_airpmax <= aircraft.get_range() and distance_takeoff_airp <= aircraft.get_range():
+                    if takeoff_rate * distance_takeoff_airp + distance_airp_airpmax * airp_rate < best_price:
+                        destination = airp
+                        best_price = takeoff_rate * distance_takeoff_airp + distance_airp_airpmax * airp_rate
+                        distance = distance_takeoff_airp
+
+        return destination, distance
+
+    def carry_out_trip_airport_to_airport(self, aircraft, distance, fuel_rate, departure, destination, best_route,
+                                          trip_num):
+        #Set all parameters necessary to carry out a trip. Fill tank up, adding the trip to the route and then removed fuel after trip
+        fuel_needed = aircraft.calculate_fuel_needed(distance)
+        cost_fuel = fuel_needed * fuel_rate
+        aircraft.add_fuel(fuel_needed)
+        best_route[trip_num] = (departure, destination, distance, cost_fuel, fuel_needed)
+        aircraft.remove_fuel_consumed(distance * aircraft.get_fuel_consumed_per_km())
+        return best_route
+
+    def set_airport_at_max_distance(self, airports, home_code, takeoff_code):
+        #Identify the airport at maximum distance from the departure. If list of airports is empty, so all airports have been visited,
+        #set the airport at maximum distance equal to the starting airport and therefore closing the cycle
+        if len(airports) == 0:
+            airport_max = home_code
+        else:
+            airport_max = self._airports.get_airport_at_max_distance(takeoff_code, airports)
+        return airport_max
+
+    def delete_airport_from_stopover(self, best_route, takeoff_code, is_visited, stopovers, airports):
+        # Take an airport off from a list of stopover to avoid to hit same airport more than twice
+        if self.count_visited_airports(best_route, takeoff_code) >= 1:
+            # Check if some airports have been visited twice. If so modifies the list of possible stopover
+            is_visited = True
+        if is_visited:
+            stopovers = airports
+        return stopovers
+
+    def calculate_total_longest_distance(self, airports):
+        """Calculates the sum of all the airports at the maximum distance for each airport in the list"""
+        # airport_dict = AirportAtlas('../csv_files/airport.csv')
+        total_distance = 0
+        for code in airports:
+            farthest_airp = self._airports.get_airport_at_max_distance(code, airports)
+            total_distance += self._airports.get_distance_between_airports(code, farthest_airp)
+        return total_distance
+
+    def find_airport_within_aircraft_range(self, aircraft, airports, dist_takeoff_airp_max, takeoff_airport,
+                                           airp_at_max_dist, destination):
+        #Find an airport which its distance to the deaparture airport is within the aircraft range and therefore it could be visited
+        while dist_takeoff_airp_max > aircraft.get_range():
+            airports_in_range = [code for code in airports if
+                         self._airports.get_distance_between_airports(takeoff_airport,
+                                                                      code) < dist_takeoff_airp_max]
+            if len(airports_in_range) > 0:
+                airp_at_max_dist = self._airports.get_airport_at_max_distance(takeoff_airport, airports_in_range)
+                dist_takeoff_airp_max = self._airports.get_distance_between_airports(takeoff_airport,
+                                                                                     airp_at_max_dist)
+            else:
+                break
+        else:
+            destination = airp_at_max_dist
+
+        return destination
+
+    def get_cheapest_airport_at_min_distance(self, home_airport, airports):
+        #Find the cheapest airport among the closest ones from departure airport
+        airports = [*airports, home_airport]
+        cheapest_rate = self._currency_rates.get_cheapest_rate_from_airport_codes(airports, self._airports,
+                                                                                  self._currencies)
+        list_cheapest = []
+        for airp in airports:
+            if self._currency_rates.get_rate_from_country(airp, self._airports, self._currencies) == cheapest_rate:
+                list_cheapest.append(airp)
+        if len(list_cheapest) == 1:
+            return list_cheapest[0]
+        else:
+            return self._airports.get_airport_at_min_distance(home_airport, list_cheapest)
+
+    #--------------------------ALGORITHMS--------------------------#
 
     def find_shortest_route(self, aircraft_model, departure, airports):
         """Function that determine the best route from a alist of airports based on the minumum distance beetween airports.
@@ -75,15 +180,7 @@ class Routes:
 
         return best_route
 
-    def get_airport_at_min_distance_within_range(self, takeoff_code, destination, aircraft, airports):
-        """Gets the airport at minimum distance from takeoof code airport considering the aircraft range"""
-        min_distance = sys.maxsize
-        for target_code in airports:
-            target_airp_distance = self._airports.get_distance_between_airports(takeoff_code, target_code)
-            if target_code != takeoff_code and target_airp_distance <= aircraft.get_range() and target_airp_distance < min_distance:
-                destination = target_code
-                min_distance = target_airp_distance
-        return destination
+
 
     def find_route_with_possible_stopover(self, aircraft_model, departure, airports):
         """
@@ -178,63 +275,6 @@ class Routes:
 
         return best_route
 
-
-    def find_stopover_between_airports(self, list_stopover, takeoff_airport, airport_max, aircraft,
-                                       takeoff_rate, destination, distance, best_price, best_route):
-
-        for airp in list_stopover:
-            """For each airport still in the stop over list, it checks if there is any airport between
-               the departure and its farthest airport. If this airport is at the distance to each of them less
-               than aircraft range and it's the most convenient then the program chooses this airport and get two trips.
-                First trip - departure to selected airport and second trip - selected airport to farthest airport
-            """
-            if airp != takeoff_airport and airp != airport_max and self.count_visited_airports(best_route, takeoff_airport) < 1:
-
-                distance_takeoff_airp = self._airports.get_distance_between_airports(takeoff_airport, airp)
-                distance_airp_airpmax = self._airports.get_distance_between_airports(airp, airport_max)
-                airp_rate = self._currency_rates.get_rate_from_country(airp, self._airports, self._currencies)
-
-                if distance_airp_airpmax <= aircraft.get_range() and distance_takeoff_airp <= aircraft.get_range():
-                    if takeoff_rate * distance_takeoff_airp + distance_airp_airpmax * airp_rate < best_price:
-                        destination = airp
-                        best_price = takeoff_rate * distance_takeoff_airp + distance_airp_airpmax * airp_rate
-                        distance = distance_takeoff_airp
-
-        return destination, distance
-
-
-    def carry_out_trip_airport_to_airport(self, aircraft, distance, fuel_rate, departure, destination, best_route, trip_num):
-        fuel_needed = aircraft.calculate_fuel_needed(distance)
-        cost_fuel = fuel_needed * fuel_rate
-        aircraft.add_fuel(fuel_needed)
-        best_route[trip_num] = (departure, destination, distance, cost_fuel, fuel_needed)
-        aircraft.remove_fuel_consumed(distance * aircraft.get_fuel_consumed_per_km())
-        return best_route
-
-    def set_airport_at_max_distance(self, airports, home_code, takeoff_code):
-        if len(airports) == 0:
-            airport_max = home_code
-        else:
-            airport_max = self._airports.get_airport_at_max_distance(takeoff_code, airports)
-        return airport_max
-
-    def delete_airport_from_stopover(self, best_route, takeoff_code, is_visited, stopovers, airports):
-        if self.count_visited_airports(best_route, takeoff_code) >= 1:
-            # Check if some airports have been visited twice. If so modifies the list of possible stopover
-            is_visited = True
-        if is_visited:
-            stopovers = airports
-        return stopovers
-
-    def calculate_total_longest_distance(self, airports):
-        """Calculates the sum of all the airports at the maximum distance for each airport in the list"""
-        #airport_dict = AirportAtlas('../csv_files/airport.csv')
-        total_distance = 0
-        for code in airports:
-            farthest_airp = self._airports.get_airport_at_max_distance(code, airports)
-            total_distance += self._airports.get_distance_between_airports(code, farthest_airp)
-        return total_distance
-
     def find_route_saving_fuel(self, aircraft_model, departure, airports):
         """This method it will find the cheapest route considering the fuel capacity of the aircraft. The primary goal is to find always the cheapest
         airport and heading towards it. After getting the cheapest airport the aircraft will be filled it up to save money when
@@ -313,44 +353,12 @@ class Routes:
             best_route = {}
         return best_route
 
-    def find_airport_within_aircraft_range(self, aircraft, airports, dist_takeoff_airp_max, takeoff_airport,
-                                           airp_at_max_dist, destination):
-        while dist_takeoff_airp_max > aircraft.get_range():
-            airports_in_range = [code for code in airports if
-                         self._airports.get_distance_between_airports(takeoff_airport,
-                                                                      code) < dist_takeoff_airp_max]
-            if len(airports_in_range) > 0:
-                airp_at_max_dist = self._airports.get_airport_at_max_distance(takeoff_airport, airports_in_range)
-                dist_takeoff_airp_max = self._airports.get_distance_between_airports(takeoff_airport,
-                                                                                     airp_at_max_dist)
-            else:
-                break
-        else:
-            destination = airp_at_max_dist
-
-        return destination
-
-    def get_cheapest_airport_at_min_distance(self, home_airport, airports):
-        airports = [*airports, home_airport]
-        cheapest_rate = self._currency_rates.get_cheapest_rate_from_airport_codes(airports, self._airports,
-                                                                                  self._currencies)
-        list_cheapest = []
-        for airp in airports:
-            if self._currency_rates.get_rate_from_country(airp, self._airports, self._currencies) == cheapest_rate:
-                list_cheapest.append(airp)
-        if len(list_cheapest) == 1:
-            return list_cheapest[0]
-        else:
-            return self._airports.get_airport_at_min_distance(home_airport, list_cheapest)
 
     def find_cheapest_route(self, aircraft_model, home_airport, airports):
         """Gathers the three find route methods and it will find the cheapest route for the selected list of airports.
         This is the main method which it will run on GUI"""
         list_routes = []
-        #currency_rates = CurrencyRatesDictionaryParent('../csv_files/currencyrates.csv')
-        #currencies = CountryCurrenciesDictionaryParent('../csv_files/countrycurrency.csv')
         list_routes.append(self.find_route_with_possible_stopover(aircraft_model, home_airport, airports))
-
         list_routes.append(self.find_shortest_route(aircraft_model, home_airport, airports))
         list_routes.append(self.find_route_saving_fuel(aircraft_model, home_airport, airports))
         best_price = sys.maxsize
