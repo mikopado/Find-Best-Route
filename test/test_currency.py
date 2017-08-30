@@ -1,9 +1,11 @@
-from country_currencies import CountryCurrenciesDictionaryParent
-from currency import Currency
 import unittest
+
+from source_file.country_currencies import CountryCurrenciesDictionaryParent
+
+
 class TestCurrency(unittest.TestCase):
     def setUp(self):
-        self.currencies = CountryCurrenciesDictionaryParent('countrycurrency.csv')
+        self.currencies = CountryCurrenciesDictionaryParent('../csv_files/countrycurrency.csv')
         self.list_of_countries = ['Italy', 'Spain', 'Germany', 'France', 'United States', 'Papua New Guinea', 'Russia']
 
     def test_get_country(self):

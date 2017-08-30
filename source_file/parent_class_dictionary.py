@@ -1,5 +1,6 @@
 import csv
-from custom_exceptions import *
+
+from source_file.custom_exceptions import *
 
 
 class ParentClassDictionary:

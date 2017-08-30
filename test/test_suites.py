@@ -1,7 +1,8 @@
+from test.test_airportAtlas import *
+from test.test_route_algorithms import *
 
-from test_airportAtlas import *
-from test_route_algorithms import *
-from test_currency_rates import *
+from test.test_currency_rates import *
+
 
 def alltests():
     tests = unittest.TestSuite()

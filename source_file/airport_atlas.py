@@ -1,7 +1,9 @@
 import math
-from airport import Airport
-from parent_class_dictionary import ParentClassDictionary
-from custom_exceptions import *
+
+from source_file.custom_exceptions import *
+from source_file.parent_class_dictionary import ParentClassDictionary
+
+from source_file.airport import Airport
 
 
 class AirportAtlas(ParentClassDictionary):
@@ -57,21 +59,21 @@ class AirportAtlas(ParentClassDictionary):
         else:
             raise InvalidCodeError("Code not valid")
 
-    def get_airport_at_max_distance(self, home_airport, list_of_airport):
+    def get_airport_at_max_distance(self, home_airport, list_of_airports):
         """Given a list of airports and a selected airport, it will find the aiport in this list that it's at
         maximum distance from the selected airport"""
         output_dict = {}
-        for airp in list_of_airport:
+        for airp in list_of_airports:
             distance = self.get_distance_between_airports(home_airport, airp)
             output_dict[distance] = airp
         max_distance = max(output_dict.keys())
         return output_dict[max_distance]
 
-    def get_airport_at_min_distance(self, home_airport, list_of_airport):
+    def get_airport_at_min_distance(self, home_airport, list_of_airports):
         """Given a list of airports and a selected airport, it will find the aiport in this list that it's at
         minimum distance from the selected airport"""
         output_dict = {}
-        for airp in list_of_airport:
+        for airp in list_of_airports:
             if home_airport != airp:
                 distance = self.get_distance_between_airports(home_airport, airp)
                 output_dict[distance] = airp

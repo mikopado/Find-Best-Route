@@ -1,11 +1,16 @@
+import csv
 from tkinter import *
 from tkinter import filedialog
-from aircrafts_dictionary import AircraftDictionaryParent
-from custom_exceptions import *
-from tkinter.ttk import Combobox
 from tkinter import messagebox
-from route_algorithms import *
-import csv
+from tkinter.ttk import Combobox
+
+from source_file.aircrafts_dictionary import AircraftDictionaryParent
+from source_file.routes_algorithms import Routes
+from source_file.airport_atlas import AirportAtlas
+from source_file.custom_exceptions import *
+from source_file.currency_rates import CurrencyRatesDictionaryParent
+from source_file.country_currencies import CountryCurrenciesDictionaryParent
+
 
 
 class MyFrame(Frame):
@@ -32,7 +37,7 @@ class MyFrame(Frame):
 
     def select_aircraft(self):
         """Combobox for selecting aircraft model and its associated label"""
-        self.aircrafts_dictionary = AircraftDictionaryParent('aircraft.csv')
+        self.aircrafts_dictionary = AircraftDictionaryParent('./csv_files/aircraft.csv')
         Label(self, text="Choose Aircraft", bg=self.bg_color).grid(row=0, pady=20)
 
         # get list of all aircraft models from aircraft.csv file
@@ -50,7 +55,7 @@ class MyFrame(Frame):
 
     def select_airport_country(self):
         """Combobox for selecting countries and its associated label"""
-        self.airport_atlas = AirportAtlas('airport.csv')
+        self.airport_atlas = AirportAtlas('./csv_files/airport.csv')
         Label(self, text="Choose Airport's Country", bg=self.bg_color).grid(row=0, column=1, pady=20, sticky='n')
 
         self.list_countries = self.airport_atlas.get_list_countries() #get list of all countries from airport.csv file
@@ -320,14 +325,16 @@ class MyFrame(Frame):
 
     def display_best_route(self, event=None):
         """Main event handler that display the best route found after clicking the find best route button."""
-
+        self.routes = Routes(self.aircrafts_dictionary, self.airport_atlas,
+                             CurrencyRatesDictionaryParent('./csv_files/currencyrates.csv'),
+                             CountryCurrenciesDictionaryParent('./csv_files/countrycurrency.csv'))
         self.list_choosen_airports = [self.airport_1.get(), self.airport_2.get(), self.airport_3.get(),
                                       self.airport_4.get(), self.airport_5.get()]
 
         try:
-            self.best_route = find_cheapest_route(self.aircraft_model.get(), self.list_choosen_airports[0],
-                                                  self.list_choosen_airports[1:],
-                                                  self.aircrafts_dictionary, self.airport_atlas)
+            self.best_route = self.routes.find_cheapest_route(self.aircraft_model.get(), self.list_choosen_airports[0],
+                                                  self.list_choosen_airports[1:])
+
         except RouteNotFoundError as exc:
             messagebox.showinfo('Fuel Management Software', exc)
         except InvalidCodeError as ex:
@@ -342,7 +349,8 @@ class MyFrame(Frame):
                         self.list_text_boxes[trip - 1][elem].set("{:0,.2f}".format(route[elem]))
 
             for i in range(len(self.list_total)):
-                self.list_total[i].set("{:0,.2f}".format(get_sum_of_dict_values(self.best_route, i + 2)))
+                self.list_total[i].set("{:0,.2f}".format(self.routes.calculate_sum_km_or_fuel_in_best_route(self.best_route, i + 2)))
+
 
     # Two supporting methods to create labels(textboxes)
     def create_labels_for_trips(self, var, row, col, width=10, height=1, anchor='center'):

@@ -1,13 +1,15 @@
 import unittest
-from airport_atlas import AirportAtlas
-from airport import Airport
-from custom_exceptions import *
+
+from source_file.airport_atlas import AirportAtlas
+from source_file.custom_exceptions import *
+
+from source_file.airport import Airport
 
 
 class TestAirportAtlas(unittest.TestCase):
 
     def setUp(self):
-        self.atl = AirportAtlas("airport.csv")
+        self.atl = AirportAtlas("csv_files/airport.csv")
         self.list_known_air = (("DUB", "SYD", 17215), ("LHR", "JFK", 5539),
                                ("CDG", "AAL", 1021))
         self.list_all_codes = []
@@ -16,8 +18,8 @@ class TestAirportAtlas(unittest.TestCase):
         self.airp_list = ['LHR', 'JFK', 'CDG', 'AAL']
         self.airp_list2 = ['DUB', 'DUB', 'DUB', 'DUB']
 
-    def test_distance_beetween_different_airports(self):
-        """Tests distnace between airports methods considering a list of airports"""
+    def test_distance_between_different_airports(self):
+        """Tests distance between airports methods considering a list of airports"""
         for i, j, dist in self.list_known_air:
             self.assertEqual(self.atl.get_distance_between_airports(i, j), dist)
 
@@ -44,11 +46,11 @@ class TestAirportAtlas(unittest.TestCase):
     def test_if_exception_raises_for_csv_not_found(self):
         """Tests if FileNotExistError raise when input a not existing csv file"""
         with self.assertRaises(FileNotExistError):
-            self.atl = AirportAtlas("airpor.cs")
+            self.atl = AirportAtlas("../csv_files/airpor.cs")
 
     def test_if_exception_raises_for_invalid_format_csvfile(self):
         with self.assertRaises(FileFormatError):
-            self.atl = AirportAtlas("aircraft.csv")
+            self.atl = AirportAtlas("../csv_files/aircraft.csv")
 
     def test_if_get_airport_at_max_distance_from_alist_of_airports(self):
         self.assertEqual(self.atl.get_airport_at_max_distance('DUB', self.airp_list), 'JFK')

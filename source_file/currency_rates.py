@@ -1,5 +1,6 @@
-from parent_class_dictionary import ParentClassDictionary
-from custom_exceptions import *
+from source_file.parent_class_dictionary import ParentClassDictionary
+
+from source_file.custom_exceptions import *
 
 
 class CurrencyRatesDictionaryParent(ParentClassDictionary):
@@ -40,16 +41,16 @@ class CurrencyRatesDictionaryParent(ParentClassDictionary):
         else:
             return self.get_object_from_key(code)
 
-    def get_highest_rate_from_airport_codes(self, airp_code_list, airp_dict, currency_dict):
+    def get_highest_rate_from_airport_codes(self, list_of_airports, airp_dict, currency_dict):
         """For a given list of airports, it finds the maximum currency rate among countries linked to these airports"""
         rates = []
-        for code in airp_code_list:
+        for code in list_of_airports:
             rates.append(self.get_rate_from_country(code, airp_dict,currency_dict))
         return max(rates)
 
-    def get_cheapest_rate_from_airport_codes(self, airp_code_list, airp_dict, currency_dict):
+    def get_cheapest_rate_from_airport_codes(self, list_of_airports, airp_dict, currency_dict):
         """Like the above method but in this case it will find the minimum rate"""
         rates = []
-        for code in airp_code_list:
+        for code in list_of_airports:
             rates.append(self.get_rate_from_country(code, airp_dict, currency_dict))
         return min(rates)

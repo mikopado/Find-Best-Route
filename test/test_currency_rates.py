@@ -1,14 +1,17 @@
 import unittest
-from currency_rates import CurrencyRatesDictionaryParent
-from country_currencies import  CountryCurrenciesDictionaryParent
-from airport_atlas import AirportAtlas
+
+from source_file.country_currencies import  CountryCurrenciesDictionaryParent
+from source_file.currency_rates import CurrencyRatesDictionaryParent
+
+from source_file.airport_atlas import AirportAtlas
+
 
 class TestCurrencyRates(unittest.TestCase):
 
     def setUp(self):
-        self.rates = CurrencyRatesDictionaryParent('currencyrates.csv')
-        self.airports = AirportAtlas('airport.csv')
-        self.currencies = CountryCurrenciesDictionaryParent('countrycurrency.csv')
+        self.rates = CurrencyRatesDictionaryParent('../csv_files/currencyrates.csv')
+        self.airports = AirportAtlas('../csv_files/airport.csv')
+        self.currencies = CountryCurrenciesDictionaryParent('csv_files/countrycurrency.csv')
         self.list_airports = ['DUB', 'LHR', 'MMY', 'YQT', 'MOW']
 
     def test_get_rate_from_country(self):

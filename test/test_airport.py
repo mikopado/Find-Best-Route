@@ -1,5 +1,7 @@
 import unittest
-from airport import Airport
+
+from source_file.airport import Airport
+
 
 class TestAirport(unittest.TestCase):
 

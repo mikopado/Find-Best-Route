@@ -1,6 +1,7 @@
-from aircraft import Aircraft
-from parent_class_dictionary import ParentClassDictionary
-from custom_exceptions import *
+from source_file.aircraft import Aircraft
+from source_file.parent_class_dictionary import ParentClassDictionary
+
+from source_file.custom_exceptions import *
 
 
 class AircraftDictionaryParent(ParentClassDictionary):

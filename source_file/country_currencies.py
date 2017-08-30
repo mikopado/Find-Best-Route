@@ -1,6 +1,8 @@
-from currency import Currency
-from parent_class_dictionary import ParentClassDictionary
-from custom_exceptions import *
+from source_file.custom_exceptions import *
+from source_file.parent_class_dictionary import ParentClassDictionary
+
+from source_file.currency import Currency
+
 
 class CountryCurrenciesDictionaryParent(ParentClassDictionary):
 
